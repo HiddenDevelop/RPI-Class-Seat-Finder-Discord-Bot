@@ -1,12 +1,13 @@
-from seat_scrapper import find_seats 
-
-import re
-
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
+from seat_scrapper import find_seats 
+
+import re
+import asyncio
 
 import discord
 from discord.ext import commands, tasks
@@ -16,7 +17,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-class_states = {}
+guild_hunts = {}
 
 @bot.event
 async def on_ready():
@@ -40,31 +41,44 @@ async def on_ready():
 def compare_class_states(class_info_1, class_info_2):
     return class_info_1['left'] == class_info_2['left'] and class_info_1['total'] == class_info_2['total'] and class_info_1['name'] == class_info_2['name']
 
-@tasks.loop(minutes=1.0)
-async def search_for_seatings():
+async def search_for_seatings(guild_id):
     
-    channel_id = getattr(search_for_seatings, "target_channel_id", None)
-    crns = getattr(search_for_seatings, "crns", [])
+    sleep_time = 60
     
-    if channel_id is None:
-        return
-    
-    channel = bot.get_channel(channel_id)
-    if channel:
+    while guild_id in guild_hunts:
+        
+        hunt = guild_hunts[guild_id]
+        
+        channel_id = hunt["channel_id"]
+        crns = hunt["crns"]
+        
+        channel = bot.get_channel(channel_id)
+
+        if channel is None:
+            print(f"Could not find channel for guild {guild_id}.")
+            await asyncio.sleep(sleep_time)
+            return
+        
         for crn in crns:
-            class_info = await find_seats(crn)
-            
-            if (crn not in class_states) or (not compare_class_states(class_states.get(crn), class_info)):
-                if class_info["left"] > 0:
-                    await channel.send(f"@everyone **Register Now!**\nSeat found for {class_info['name']}  :raised_hands:  ({class_info['left']} / {class_info['total']})")
-                else:
-                    await channel.send(f"No seats found for {class_info['name']}  😢  ({class_info['left']} / {class_info['total']})")
-            else:
-                print("First time observing state or duplicate state seen.")
+            try:
+                class_info = await find_seats(crn)
+                previous_state = hunt["class_states"].get(crn)
                 
-            class_states[crn] = class_info
-
-
+                if (previous_state is None) or (not compare_class_states(previous_state, class_info)):
+                    if class_info["left"] > 0:
+                        await channel.send(f"@everyone **Register Now!**\nSeat found for {class_info['name']}  :raised_hands:  ({class_info['left']} / {class_info['total']})")
+                    else:
+                        await channel.send(f"No seats found for {class_info['name']}  😢  ({class_info['left']} / {class_info['total']})")
+                else:
+                    print("First time observing state or duplicate state seen.")
+                    
+                hunt["class_states"][crn] = class_info
+                
+            except Exception as e:
+                print(f"Error checking for CRN {crn} in guild {guild_id}: {e}")
+                
+    asyncio.sleep(sleep_time)
+    
 @bot.tree.command(name="remove_class", description="Remove class from ongoing hunt.")
 async def remove_class(interaction: discord.Interaction, crn: str):
     
