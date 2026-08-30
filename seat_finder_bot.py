@@ -1,5 +1,7 @@
 from seat_scrapper import find_seats 
 
+import re
+
 import os
 from dotenv import load_dotenv
 
@@ -26,6 +28,13 @@ async def on_ready():
         
     for command in bot.commands:
         print(f"  !{command.name}")
+        
+    synced = await bot.tree.sync()
+
+    print(f"Synced {len(synced)} slash command(s):")
+
+    for command in synced:
+        print(f"  /{command.name}")
 
 
 def compare_class_states(class_info_1, class_info_2):
@@ -47,17 +56,17 @@ async def search_for_seatings():
             
             if (crn not in class_states) or (not compare_class_states(class_states.get(crn), class_info)):
                 if class_info["left"] > 0:
-                    await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
+                    await channel.send(f"@everyone **Register Now!**\nSeat found for {class_info['name']}  :raised_hands:  ({class_info['left']} / {class_info['total']})")
                 else:
-                    await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
+                    await channel.send(f"No seats found for {class_info['name']}  😢  ({class_info['left']} / {class_info['total']})")
             else:
                 print("First time observing state or duplicate state seen.")
                 
             class_states[crn] = class_info
 
 
-@bot.command()
-async def remove_class(ctx, crn: str):
+@bot.tree.command(name="remove_class", description="Remove class from ongoing hunt.")
+async def remove_class(interaction: discord.Interaction, crn: str):
     
     if not search_for_seatings.is_running():
         return
@@ -69,8 +78,8 @@ async def remove_class(ctx, crn: str):
         
     search_for_seatings.crns = crns
     
-@bot.command()
-async def add_class(ctx, crn: str):
+@bot.tree.command(name="add_class", description="Add class to ongoing hunt.")
+async def add_class(interaction: discord.Interaction, crn: str):
     
     if not search_for_seatings.is_running():
         return
@@ -80,23 +89,50 @@ async def add_class(ctx, crn: str):
     
     search_for_seatings.crns = crns
     
-@bot.command()
-async def stop_hunt(ctx):
+@bot.tree.command(name="stop_hunt", description="Stop tracking classes.")
+async def stop_hunt(interaction: discord.Interaction):
     
     if search_for_seatings.is_running():
         search_for_seatings.stop()
 
-@bot.command()
-async def begin_hunt(ctx, loop_interval: float = 1.0, *crns):
+
+@bot.tree.command(name="begin_hunt", description="Begin tracking class seatings by crn.")
+async def begin_hunt(interaction: discord.Interaction, crns: str):
     
-    search_for_seatings.change_interval(minutes=loop_interval)
-    search_for_seatings.target_channel_id = ctx.channel.id
-    search_for_seatings.crns = crns
+    crn_list = re.split(r",\s*|\s+", crns)
+    
+    if not crn_list:
+        await interaction.response.send_message("You need to provide at least one crn.", ephemeral=True)
+        return
+    
+    invalid_crns = [value for value in crn_list if not value.isdigit()]
+    
+    if invalid_crns:
+        await interaction.response.send_message(f"Invalid crn(s): {', '.join(invalid_crns)}", ephemeral=True)
+        return
+    
+    crn_list = [int(value) for value in crn_list]
+    
+    print(f"Received crns: {crn_list}")
+    
+    await interaction.response.send_message(f"**Let the Hunt Begin!**\nKeeping an eye out for {len(crn_list)} CRN (s): `{', '.join(map(str, crn_list))}`")
+    
+    search_for_seatings.change_interval(minutes=1)
+    search_for_seatings.target_channel_id = interaction.channel.id
+    search_for_seatings.crns = crn_list
     
     if not search_for_seatings.is_running():
         search_for_seatings.start()
 
-@bot.command()
+@bot.tree.command(name="hunt_status", description="Check hunt status.")
+async def hunt_status(interaction: discord.Interaction):
+    
+    if search_for_seatings.is_running():
+        await interaction.response.send_message("Hunt is currently active.")
+    else:
+        await interaction.response.send_message("Hunt is currently unactive.")
+
+@bot.tree.command(name="ping", description="Verify bot is running.")
 async def ping(ctx):
     await ctx.send("Pong! 🏓")
      
