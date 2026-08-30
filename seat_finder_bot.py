@@ -3,6 +3,9 @@ from seat_scrapper import find_seats
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
 import discord
 from discord.ext import commands, tasks
 
@@ -11,9 +14,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-load_dotenv()
-BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
-
+class_states = {}
 
 @bot.event
 async def on_ready():
@@ -25,7 +26,11 @@ async def on_ready():
         
     for command in bot.commands:
         print(f"  !{command.name}")
-        
+
+
+def compare_class_states(class_info_1, class_info_2):
+    return class_info_1['left'] == class_info_2['left'] and class_info_1['total'] == class_info_2['total'] and class_info_1['name'] == class_info_2['name']
+
 @tasks.loop(minutes=1.0)
 async def search_for_seatings():
     
@@ -40,10 +45,15 @@ async def search_for_seatings():
         for crn in crns:
             class_info = await find_seats(crn)
             
-            if class_info["left"] > 0:
-                await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
+            if (crn not in class_states) or (not compare_class_states(class_states.get(crn), class_info)):
+                if class_info["left"] > 0:
+                    await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
+                else:
+                    await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
             else:
-                await channel.send(f"({class_info['left']} / {class_info['total']}) {class_info['name']}")
+                print("First time observing state or duplicate state seen.")
+                
+            class_states[crn] = class_info
 
 
 @bot.command()
