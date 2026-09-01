@@ -276,7 +276,7 @@ async def begin_hunt(interaction: discord.Interaction, crns: str):
 @bot.tree.command(name="hunt_status", description="Check hunt status.")
 async def hunt_status(interaction: discord.Interaction):
     
-    hunt_key = get_hunt_key(hunt_key)
+    hunt_key = get_hunt_key(interaction)
     
     if hunt_key in guild_hunts and guild_hunts[hunt_key]["task"] is not None:
         await interaction.response.send_message("Hunt is currently active.")
