@@ -9,6 +9,8 @@ from seat_scrapper import find_seats
 import re
 import asyncio
 
+from datetime import datetime, timezone
+
 import discord
 from discord.ext import commands, tasks
 
@@ -47,6 +49,39 @@ def get_hunt_key(interaction: discord.Interaction):
     
     return ("user", interaction.user.id)
 
+async def send_notification(channel, new_state, previous_state):
+    
+    seatings_available_msg = "@everyone **Register Now!**\nSeat found for {name}  :raised_hands:  ({left} / {total}) (Last Checked: <t:{timestamp}:F>)"
+    no_seatings_msg = "No seats found for {name}  😢  ({left} / {total}) (Last Checked: <t:{timestamp}:F>)"
+    
+    name = new_state["name"]
+    left = new_state["left"]
+    total = new_state["total"]
+    
+    if (previous_state is not None) and (previous_state.get("message_id") is not None):
+        try:
+            message = await channel.fetch_message(previous_state["message_id"])
+            
+            # notify users that registration is open
+            if new_state["left"] > 0:
+                await message.edit(content=seatings_available_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+            # notify users that class section is full
+            else:
+                await message.edit(content=no_seatings_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+            return
+        
+        except Exception as e:
+            print("Error while attempting to edit old message: {e}")
+    
+    # notify users that registration is open
+    if new_state["left"] > 0:
+        message = await channel.send(seatings_available_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+        new_state["message_id"] = message.id
+    # notify users that class section is full
+    else:
+        message = await channel.send(no_seatings_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+        new_state["message_id"] = message.id
+            
 async def search_for_seatings(hunt_key):
     
     sleep_time = 60
@@ -81,16 +116,7 @@ async def search_for_seatings(hunt_key):
                 class_info = await find_seats(crn)
                 previous_state = hunt["class_states"].get(crn)
                 
-                # send message to channel only if the CRN is viewed for the first time or if there was a change in the class information
-                if (previous_state is None) or (not compare_class_states(previous_state, class_info)):
-                    # notify users that registration is open
-                    if class_info["left"] > 0:
-                        await channel.send(f"@everyone **Register Now!**\nSeat found for {class_info['name']}  :raised_hands:  ({class_info['left']} / {class_info['total']})")
-                    # notify users that class section is full
-                    else:
-                        await channel.send(f"No seats found for {class_info['name']}  😢  ({class_info['left']} / {class_info['total']})")
-                else:
-                    print("First time observing state or duplicate state seen.")
+                await send_notification(channel, class_info, previous_state)
                     
                 # update CRN state
                 hunt["class_states"][crn] = class_info
