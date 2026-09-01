@@ -49,10 +49,55 @@ def get_hunt_key(interaction: discord.Interaction):
     
     return ("user", interaction.user.id)
 
+def make_notification_embed(empty, name, left, total, timestamp):
+    if empty:
+        embed = discord.Embed(
+            title=":raised_hands: SEAT AVAILABLE",
+            description=f"{name}",
+            color=discord.Color.green()
+        )
+        
+        embed.add_field(
+            name="🪑 Availability",
+            value=f"{left} / {total} seats available",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="",
+            value="👉 **Register now!**",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⏱️ Last checked",
+            value=f"<t:{timestamp}:F>",
+            inline=False
+        )
+        
+        return embed
+    else:
+        embed = discord.Embed(
+            title=":broken_heart: CLASS FULL",
+            description=f"{name}",
+            color=discord.Color.red()
+        )
+        
+        embed.add_field(
+            name="🪑 Availability",
+            value=f"{left} / {total} seats available",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⏱️ Last checked",
+            value=f"<t:{timestamp}:F>",
+            inline=False
+        )
+        
+        return embed
+
 async def send_notification(channel, new_state, previous_state):
-    
-    seatings_available_msg = "@everyone **Register Now!**\nSeat found for {name}  :raised_hands:  ({left} / {total}) (Last Checked: <t:{timestamp}:F>)"
-    no_seatings_msg = "No seats found for {name}  😢  ({left} / {total}) (Last Checked: <t:{timestamp}:F>)"
     
     name = new_state["name"]
     left = new_state["left"]
@@ -64,10 +109,12 @@ async def send_notification(channel, new_state, previous_state):
             
             # notify users that registration is open
             if new_state["left"] > 0:
-                await message.edit(content=seatings_available_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+                await message.edit(embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
+                new_state["message_id"] = message.id
             # notify users that class section is full
             else:
-                await message.edit(content=no_seatings_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+                await message.edit(embed=make_notification_embed(False, name, left, total, int(datetime.now(timezone.utc).timestamp())))
+                new_state["message_id"] = message.id
             return
         
         except Exception as e:
@@ -75,16 +122,16 @@ async def send_notification(channel, new_state, previous_state):
     
     # notify users that registration is open
     if new_state["left"] > 0:
-        message = await channel.send(seatings_available_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+        message = await channel.send(embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
         new_state["message_id"] = message.id
     # notify users that class section is full
     else:
-        message = await channel.send(no_seatings_msg.format(name=name, left=left, total=total, timestamp=int(datetime.now(timezone.utc).timestamp())))
+        message = await channel.send(embed=make_notification_embed(False, name, left, total, int(datetime.now(timezone.utc).timestamp())))
         new_state["message_id"] = message.id
             
 async def search_for_seatings(hunt_key):
     
-    sleep_time = 60
+    sleep_time = 20
     
     # polling loop for seat hunt
     while hunt_key in guild_hunts:
