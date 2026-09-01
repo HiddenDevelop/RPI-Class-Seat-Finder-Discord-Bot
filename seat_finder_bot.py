@@ -131,7 +131,7 @@ async def send_notification(channel, new_state, previous_state):
             
 async def search_for_seatings(hunt_key):
     
-    sleep_time = 20
+    sleep_time = 60
     
     # polling loop for seat hunt
     while hunt_key in guild_hunts:
