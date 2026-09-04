@@ -12,7 +12,7 @@ import asyncio
 from datetime import datetime, timezone
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -52,7 +52,7 @@ def get_hunt_key(interaction: discord.Interaction):
 def make_notification_embed(empty, name, left, total, timestamp):
     if empty:
         embed = discord.Embed(
-            title=":raised_hands: SEAT AVAILABLE",
+            title="SEAT AVAILABLE",
             description=f"{name}",
             color=discord.Color.green()
         )
@@ -78,7 +78,7 @@ def make_notification_embed(empty, name, left, total, timestamp):
         return embed
     else:
         embed = discord.Embed(
-            title=":broken_heart: CLASS FULL",
+            title="CLASS FULL",
             description=f"{name}",
             color=discord.Color.red()
         )
@@ -97,7 +97,7 @@ def make_notification_embed(empty, name, left, total, timestamp):
         
         return embed
 
-async def send_notification(channel, new_state, previous_state):
+async def send_notification(channel, new_state, previous_state, mention):
     
     name = new_state["name"]
     left = new_state["left"]
@@ -109,7 +109,7 @@ async def send_notification(channel, new_state, previous_state):
             
             # notify users that registration is open
             if new_state["left"] > 0:
-                await message.edit(embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
+                await message.edit(content=mention, embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
                 new_state["message_id"] = message.id
             # notify users that class section is full
             else:
@@ -122,7 +122,7 @@ async def send_notification(channel, new_state, previous_state):
     
     # notify users that registration is open
     if new_state["left"] > 0:
-        message = await channel.send(embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
+        message = await channel.send(content=mention, embed=make_notification_embed(True, name, left, total, int(datetime.now(timezone.utc).timestamp())))
         new_state["message_id"] = message.id
     # notify users that class section is full
     else:
@@ -163,7 +163,7 @@ async def search_for_seatings(hunt_key):
                 class_info = await find_seats(crn)
                 previous_state = hunt["class_states"].get(crn)
                 
-                await send_notification(channel, class_info, previous_state)
+                await send_notification(channel, class_info, previous_state, hunt["mention"])
                     
                 # update CRN state
                 hunt["class_states"][crn] = class_info
@@ -226,7 +226,8 @@ async def stop_hunt(interaction: discord.Interaction):
     await interaction.response.send_message(f"The hunt has been stopped.")
 
 
-@bot.tree.command(name="begin_hunt", description="Begin tracking class seatings by crn.")
+@bot.tree.command(name="begin_hunt", description="Begin tracking class seatings by course registration number (crn). Example: /begin_hunt 77330 78854")
+@discord.app_commands.describe(crns="(course registration numbers) -> Example: /begin_hunt 77330 or /begin_hunt 77330 78854")
 async def begin_hunt(interaction: discord.Interaction, crns: str):
     
     hunt_key = get_hunt_key(interaction)
@@ -263,6 +264,7 @@ async def begin_hunt(interaction: discord.Interaction, crns: str):
         "channel_id" : interaction.channel.id,
         "crns" : crn_list,
         "class_states" : {},
+        "mention" : interaction.guild is None and interaction.user.mention or "@everyone",
         "task" : None
     }
     
