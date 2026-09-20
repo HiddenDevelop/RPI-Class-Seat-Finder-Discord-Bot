@@ -227,7 +227,7 @@ async def stop_hunt(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="begin_hunt", description="Begin tracking class seatings by course registration number (crn). Example: /begin_hunt 77330 78854")
-@discord.app_commands.describe(crns="(course registration numbers) -> Example: /begin_hunt 77330 or /begin_hunt 77330 78854")
+@discord.app_commands.describe(crns="(course registration numbers) Example: /begin_hunt 77330 or /begin_hunt 77330 78854")
 async def begin_hunt(interaction: discord.Interaction, crns: str):
     
     hunt_key = get_hunt_key(interaction)
