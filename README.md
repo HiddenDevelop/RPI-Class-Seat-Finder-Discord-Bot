@@ -6,23 +6,6 @@ Instead of repeatedly checking SIS yourself, provide the bot with one or more **
 
 When a seat becomes available, the bot updates the class status in Discord and can notify the server so you can register as soon as possible.
 
----
-
-## Features
-
-* 🔎 Monitor one or multiple RPI course CRNs
-* 🪑 Check current seat availability from RPI SIS
-* 🔔 Notify Discord when seats are available
-* 🔄 Automatically re-check courses every 60 seconds
-* ➕ Add courses to an active hunt
-* ➖ Remove courses from an active hunt
-* 🛑 Stop an active seat hunt
-* 📊 Check whether a hunt is currently running
-* 💬 Supports Discord slash commands
-* 👤 Works in Discord servers and direct-message contexts
-
----
-
 ## How It Works
 
 The bot periodically requests the RPI SIS course detail page for each CRN being monitored.
