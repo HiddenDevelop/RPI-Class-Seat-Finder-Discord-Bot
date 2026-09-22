@@ -20,9 +20,10 @@ def get_term():
     return str(current.year) + season
     
 
-async def find_seats(crn):
+async def find_seats(crn, fixed_term="none"):
     
-    term = get_term()
+    term = get_term() if fixed_term == "none" else fixed_term
+    
     url = f"https://sis.rpi.edu/rss/bwckschd.p_disp_detail_sched?term_in={term}&crn_in={crn}"
     
     async with aiohttp.ClientSession() as session:
@@ -58,5 +59,13 @@ async def find_seats(crn):
     
 if __name__ == "__main__":
     
-    print(asyncio.run(find_seats(77330)))
-    print(get_term())
+    print(get_term()) # Test case 0: fetch current term
+    
+    print(asyncio.run(find_seats(77330))) # Test case 1: find seats with CRN on current term
+    
+    print(asyncio.run(find_seats(44314, "202101"))) # Test case 2: find seats with CRN on spring 
+    
+    print(asyncio.run(find_seats(17794, "202205"))) # Test case 3: find seats with CRN on summer 
+    
+    print(asyncio.run(find_seats(72024, "202509"))) # Test case 4: find seats with CRN on fall
+    
