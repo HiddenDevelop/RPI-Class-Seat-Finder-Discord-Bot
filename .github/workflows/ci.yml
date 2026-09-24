@@ -34,4 +34,4 @@ jobs:
           python -m py_compile seat_finder_bot.py
 
       - name: Run tests
-        run: pytest -v
+        run: python -m pytest -v
