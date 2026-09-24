@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
-BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 from seat_scrapper import find_seats 
 
@@ -290,5 +288,7 @@ async def hunt_status(interaction: discord.Interaction):
 async def ping(ctx):
     await ctx.send("Pong! 🏓")
      
-bot.run(BOT_TOKEN)
+if __name__ == "__main__":
+    BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+    bot.run(BOT_TOKEN)
 
