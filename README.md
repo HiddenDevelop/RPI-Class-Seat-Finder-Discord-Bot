@@ -1,4 +1,10 @@
-# RPI Class Seat Finder Discord Bot 🪑
+<p align="center">
+  <img src="./assets/rpi-seat-tracker-banner.png"
+       alt="RPI Seat Tracker"
+       width="100%">
+</p>
+
+# RPI Class Seat Finder Discord Bot
 
 A Discord bot that monitors class availability at **Rensselaer Polytechnic Institute (RPI)** and notifies your Discord server when seats become available.
 
@@ -12,9 +18,9 @@ The bot periodically requests the RPI SIS course detail page for each CRN being 
 
 `seat_scrapper.py` parses the returned HTML and extracts:
 
-* Course name
-* Total number of seats
-* Number of seats remaining
+- Course name
+- Total number of seats
+- Number of seats remaining
 
 `seat_finder_bot.py` manages the Discord bot, active seat hunts, commands, notifications, and the polling loop.
 
@@ -149,10 +155,10 @@ pip install -r requirements.txt
 
 The project uses packages including:
 
-* `discord.py`
-* `aiohttp`
-* `beautifulsoup4`
-* `python-dotenv`
+- `discord.py`
+- `aiohttp`
+- `beautifulsoup4`
+- `python-dotenv`
 
 ---
 
@@ -192,10 +198,10 @@ applications.commands
 
 The bot should have permissions necessary to:
 
-* View the channel
-* Send messages
-* Embed links
-* Read message history
+- View the channel
+- Send messages
+- Embed links
+- Read message history
 
 If you want server-wide `@everyone` notifications to work, the bot may also need permission to mention everyone.
 
@@ -384,12 +390,12 @@ Please use reasonable polling intervals to avoid placing unnecessary load on RPI
 
 ## Technologies Used
 
-* **Python**
-* **discord.py**
-* **aiohttp**
-* **Beautiful Soup**
-* **python-dotenv**
-* **RPI SIS**
+- **Python**
+- **discord.py**
+- **aiohttp**
+- **Beautiful Soup**
+- **python-dotenv**
+- **RPI SIS**
 
 ---
 
@@ -397,18 +403,18 @@ Please use reasonable polling intervals to avoid placing unnecessary load on RPI
 
 Possible improvements to the project include:
 
-* Automatically determine the current RPI semester/term
-* Persist hunts across bot restarts
-* Add database support
-* Allow custom notification roles
-* Add configurable polling intervals
-* Improve invalid-CRN detection
-* Add course search by subject/course number
-* Add Docker support
-* Add logging instead of console-only output
-* Add automated tests
-* Add per-user hunts within a Discord server
-* Add a direct link to registration/course details in notifications
+- Automatically determine the current RPI semester/term
+- Persist hunts across bot restarts
+- Add database support
+- Allow custom notification roles
+- Add configurable polling intervals
+- Improve invalid-CRN detection
+- Add course search by subject/course number
+- Add Docker support
+- Add logging instead of console-only output
+- Add automated tests
+- Add per-user hunts within a Discord server
+- Add a direct link to registration/course details in notifications
 
 ---
 
