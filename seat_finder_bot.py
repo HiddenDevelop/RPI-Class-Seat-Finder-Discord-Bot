@@ -4,6 +4,16 @@ load_dotenv()
 
 from seat_scrapper import find_seats 
 
+from database import (
+    add_class as db_add_class,
+    delete_hunt,
+    initialize_database,
+    load_hunts,
+    remove_class as db_remove_class,
+    save_class_state,
+    save_hunt,
+)
+
 import re
 import asyncio
 
@@ -18,6 +28,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 guild_hunts = {}
+database_loaded = False
 
 @bot.event
 async def on_ready():
