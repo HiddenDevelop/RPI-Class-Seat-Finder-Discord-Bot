@@ -239,23 +239,45 @@ async def remove_class(
     )
     
     
-@bot.tree.command(name="add_class", description="Add class to ongoing hunt.")
-async def add_class(interaction: discord.Interaction, crn: str):
-    
+@bot.tree.command(
+    name="add_class",
+    description="Add class to ongoing hunt."
+)
+async def add_class(
+    interaction: discord.Interaction,
+    crn: str
+):
     hunt_key = get_hunt_key(interaction)
 
     if hunt_key not in guild_hunts:
-        await interaction.response.send_message(f"There is no hunt on this server.")
+        await interaction.response.send_message(
+            "There is no hunt on this server."
+        )
         return
 
-    hunt = guild_hunts[hunt_key]
-    
-    if crn in hunt["crns"]:
-        await interaction.response.send_message(f"CRN {crn} already in hunt.")
+    if not crn.isdigit():
+        await interaction.response.send_message(
+            f"Invalid CRN: {crn}",
+            ephemeral=True
+        )
         return
-     
+
+    crn = int(crn)
+    hunt = guild_hunts[hunt_key]
+
+    if crn in hunt["crns"]:
+        await interaction.response.send_message(
+            f"CRN {crn} already in hunt."
+        )
+        return
+
     hunt["crns"].append(crn)
-    await interaction.response.send_message(f"Added CRN {crn} to hunt.")
+
+    await db_add_class(hunt_key, crn)
+
+    await interaction.response.send_message(
+        f"Added CRN {crn} to hunt."
+    )
 
     
 @bot.tree.command(name="stop_hunt", description="Stop tracking classes.")
