@@ -32,15 +32,30 @@ database_loaded = False
 
 @bot.event
 async def on_ready():
+    global database_loaded
+
+    if not database_loaded:
+        await initialize_database()
+
+        persisted_hunts = await load_hunts()
+        guild_hunts.update(persisted_hunts)
+
+        for hunt_key, hunt in guild_hunts.items():
+            hunt["task"] = asyncio.create_task(
+                search_for_seatings(hunt_key)
+            )
+
+        database_loaded = True
+
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print(f"Connected to {len(bot.guilds)} server(s):")
 
     for guild in bot.guilds:
         print(f"  - {guild.name} ({guild.id})")
-        
+
     for command in bot.commands:
         print(f"  !{command.name}")
-        
+
     synced = await bot.tree.sync()
 
     print(f"Synced {len(synced)} slash command(s):")
