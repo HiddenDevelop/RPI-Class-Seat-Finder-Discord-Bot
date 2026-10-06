@@ -197,19 +197,46 @@ async def search_for_seatings(hunt_key):
                 
         await asyncio.sleep(sleep_time)
     
-@bot.tree.command(name="remove_class", description="Remove class from ongoing hunt.")
-async def remove_class(interaction: discord.Interaction, crn: str):
-    
+@bot.tree.command(
+    name="remove_class",
+    description="Remove class from ongoing hunt."
+)
+async def remove_class(
+    interaction: discord.Interaction,
+    crn: str
+):
     hunt_key = get_hunt_key(interaction)
 
     if hunt_key not in guild_hunts:
-        await interaction.response.send_message(f"There is no hunt on this server.")
+        await interaction.response.send_message(
+            "There is no hunt on this server."
+        )
         return
 
-    if crn in guild_hunts[hunt_key]["crns"]:
-        guild_hunts[hunt_key]["crns"].remove(crn)
-    
-    await interaction.response.send_message(f"Removed CRN {crn} to hunt.")
+    if not crn.isdigit():
+        await interaction.response.send_message(
+            f"Invalid CRN: {crn}",
+            ephemeral=True
+        )
+        return
+
+    crn = int(crn)
+    hunt = guild_hunts[hunt_key]
+
+    if crn not in hunt["crns"]:
+        await interaction.response.send_message(
+            f"CRN {crn} is not in the hunt."
+        )
+        return
+
+    hunt["crns"].remove(crn)
+    hunt["class_states"].pop(crn, None)
+
+    await db_remove_class(hunt_key, crn)
+
+    await interaction.response.send_message(
+        f"Removed CRN {crn} from hunt."
+    )
     
     
 @bot.tree.command(name="add_class", description="Add class to ongoing hunt.")
